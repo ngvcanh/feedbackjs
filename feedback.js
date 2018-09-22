@@ -2,7 +2,7 @@
 
 var _ftCfg = {
 
-    URLServer : 'http://docs.financal.vn/feedback.php',
+    URLServer : 'http://example.com/handler.php',
 
     MilisecondsShowMessage : 2000,
 
