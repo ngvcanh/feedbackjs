@@ -38,7 +38,6 @@ class DBStore{
     private $_column = [];
 
     function __construct(){
-        $this->_props = (object)$this->_props;
         $this->_connection();
     }
 
