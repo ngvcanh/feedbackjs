@@ -1,11 +1,5 @@
 <?php
 
-function prr($var){
-    echo '<pre>';
-    print_r($var);
-    echo '</pre>';
-}
-
 $CONFIG = [];
 
 $CONFIG['HEADER_SERECT_KEY'] = true;
