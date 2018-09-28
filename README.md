@@ -63,3 +63,160 @@ class Utility extends Component{
 | <p align="center">*MilisecondsShowMessage*</p> | **Integer** | The millisecond wait to close the message since it appears | <p align="center">`2000`</p> |
 | <p align="center">*URLServer*</p> | **String** | The URL that form will execute ajax to it | |
 
+## Form controls
+
+### 1. Variable
+
+An array or an object named `_ftFormCtrl` is defined that specifies the controls used within the form. Include buttons of the form. Each of its elements is an object including the label and control information, which may contain multiple controls in each such object.
+
+```js
+const _ftFormCtrl = [
+
+];
+```
+
+### 2. Object controls
+
+An object demo control
+
+```js
+
+{
+    name : "Label name",
+    tags : [
+        // This is list controls for row
+        {
+            tag : "textbox", // input
+            attr : {
+                type : "text",
+                name : "demo_input_text",
+                ...
+            }
+        },
+        ...
+    ]
+}
+
+```
+
+### 3. Object control doesn't have label
+
+A control object does not have a label
+
+```js
+{
+    tags : [
+        // This is list controls for row
+        {
+            tag : "textbox", // input
+            attr : {
+                type : "text",
+                name : "demo_input_text",
+                ...
+            }
+        },
+        ...
+    ]
+}
+```
+
+### 4. Object input file
+
+```js
+{
+    tags : [
+        // This is list controls for row
+        {
+            tag : "textbox", // input
+            attr : {
+                type : "file",
+                name : "demo_input_file",
+                multiple : true,
+                ...
+            }
+        },
+        ...
+    ]
+}
+```
+
+### 5. Object select
+
+```js
+{
+    tags : [
+        // This is list controls for row
+        {
+            tag : "select", // input
+            attr : {
+                name : "demo_select",
+                ...
+            },
+            opts : [
+                { value : "val_opt_1", text : "Text opt 1" },
+                { value : "val_opt_2", text : "Text opt 2" },
+                ...
+            ]
+        },
+        ...
+    ]
+}
+```
+
+### 6. Object textarea
+
+```js
+{
+    tags : [
+        // This is list controls for row
+        {
+            tag : "textarea", // input
+            attr : {
+                name : "demo_select",
+                rows : 5,
+                ...
+            },
+        },
+        ...
+    ]
+}
+```
+
+
+### 7. Object button
+
+```js
+{
+    tags : [
+        // This is list controls for row
+        {
+            tag : "button", // input
+            attr : {
+                type : "submit",
+            },
+        },
+        {
+            tag : "button",
+            attr : {
+                type : "button"
+            },
+            events : {
+                click : "_clearButton"
+            }
+        }
+        ...
+    ]
+}
+```
+
+`_clearButton` is a defined method that resets the form and data in localStorage. It can not be called directly as a function.
+
+## Funtions
+
+### 1. _ftSetMessage(message [, type = "error"]);
+
+This is a function for displaying messages on a form.
+
+- **Message:** The message content will be displayed.
+
+- **type:** Message type, there are two values `error` and` success`. The default is `error`.
