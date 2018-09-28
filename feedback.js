@@ -253,7 +253,7 @@ const _ftfbCSS = function(){
     let o = ';min-height:' + fnCf.fbFmHeight() + ';max-height:' + fnCf.fbFmHeight() + fnCf.fbScrollX() + fnCf.fbScrollY();
     let p = ';border:1px solid ' + fnCf.fbTbBdrCor() + ';background:' + fnCf.fbTbBgCor();
     let t = ';background:' + fnCf.fbBtnBgCor() + ';border:1px solid ' + fnCf.fbBtnBgCor() + ';color:' + fnCf.fbBtnTxtCor();
-    let m = fnCf.fbMsgPos() + ':0;' + fnCf.fbPosX() + ':-' + fnCf.fbWidth();
+    let m = fnCf.fbMsgPos() + ':' + ('top' === fnCf.fbMsgPos() ? fnCf.fbHHeight(true) + 'px' : 0) + ';' + fnCf.fbPosX() + ':-' + fnCf.fbWidth();
 
     return {
         box : "position:fixed;border-top-left-radius:4px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;box-sizing:border-box;transition:all ease 0.3s;" + b,
@@ -305,9 +305,9 @@ const _ftSetMessage = function(msg, type){
         elMsg.style.border = '2px solid #b25747';
     }
 
-    elMsg.style.right = 0;
+    elMsg.style[fnCf.fbPosX()] = 0;
     setTimeout(function(){
-        elMsg.style.right = '-350px';
+        elMsg.style[fnCf.fbPosX()] = '-' + fnCf.fbWidth();
     }, fnCf.closeMsg());
 };
 
