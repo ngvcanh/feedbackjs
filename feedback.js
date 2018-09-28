@@ -1,13 +1,25 @@
 "use strict";
 
-var _ftCfg = {
+const _ftCfg = {
 
-    URLServer : 'http://example.com/handler.php',
+    URLServer : 'http://localhost/feedbackjs/api/phpmysql.php',
 
     MilisecondsShowMessage : 2000,
 
     AJAXSuccess : function(msg){
-        _ftSetMessage(msg, 'success');
+        try{
+            let r = JSON.parse(msg);
+            if (!r.error){
+                _ftSetMessage(r.data, 'success');
+                _ftfbClearLocal();
+            }
+            else{
+                _ftSetMessage(r.error.message);
+            }
+        }
+        catch(e){
+            _ftSetMessage(e.message);
+        }
     },
 
     AJAXError : function(msg){
@@ -16,6 +28,11 @@ var _ftCfg = {
 
     BeforeAJAX : function(form){
         form.append('location', window.location.host);
+    },
+
+    Headers : {
+        s : 'ge2wJZfY9U9XMex7WDKbN6wzakoHrK01',
+        a : 'B8f1bAz419fvqGtDOW853eAI'
     },
 
     EnableUseLocalStorage : true,
@@ -30,9 +47,9 @@ var _ftCfg = {
 
     FeedbackBoxLayer : 999999,//
 
-    FeedbackPositionX : 'right',//
+    FeedbackPositionX : 'left',//
 
-    FeedbackPositionY : 'bottom',//
+    FeedbackPositionY : 'top',//
 
     FeedbackBackgroundColor : '#fff',//
 
@@ -48,11 +65,9 @@ var _ftCfg = {
 
     FeedbackIconSize : '16px',//
 
-    FeedbackFormHeight : '385px',//
-
     FeedbackShowScrollBarY : true, //
 
-    FeedbackShowScroolBarX : false, //
+    FeedbackShowScrollBarX : false, //
 
     FeedbackDistanceRows : '15px', //
 
@@ -64,32 +79,45 @@ var _ftCfg = {
 
     FeedbackButtonTextColor : '#fff',
 
-    FeedbackMessagePosition : 'bottom',
-
-    FeedbackMessageErrorColor : '#b25747',
-
-    FeedbackMessageErrorAlphaColor : 'background:rgba(178, 87, 71, 0.2)',
-
-    FeedbackMessageSuccessColor : '#63b75b',
-
-    FeedbackMessageSuccessAlphaColor : 'rgba(99, 183, 91, 0.2)',
+    FeedbackMessagePosition : 'bottom'
 
 };
 
-var _ftFormCtrl = [
-    { name : 'Function', tags : [ { tag : 'textbox', attr : { type : 'text', name : 'function', placeholder : 'Enter function...' } } ] },
-    { name : 'Link', tags : [ { tag : 'textbox', attr : { type : 'text', name : 'link', placeholder : 'Enter link...' } } ] },
+const _ftFormCtrl = [
+    { name : 'Function', tags : [ { tag : 'textbox', attr : { type : 'text', name : 'funcs', placeholder : 'Enter function...' } } ] },
+    { name : 'Link', tags : [ { tag : 'textbox', attr : { type : 'text', name : 'links', placeholder : 'Enter link...' } } ] },
+    { name : 'Username', tags : [ { tag : 'textbox', attr : { type : 'text', name : 'username', placeholder : 'Enter Username...' } } ] },
     { name : 'Description', tags : [ { tag : 'textarea', attr : { name : 'description', rows : 7, placeholder: 'Enter description detail...' } } ] },
-    { name : 'Attachment', tags : [ { tag : 'textbox', attr : { type : 'file', name : 'attachment', multiple : true } } ] },
+    { name : 'Attachment', tags : [ { tag : 'textbox', attr : { type : 'file', name : 'attach[]', multiple : true } } ] },
     { tags : [ 
         { tag : 'button', value : 'Feedback', attr : { type : 'submit' } }, 
         { tag : 'button', value : 'Clear', attr : { type : 'button' }, events : { click : '_clearButton' } } 
     ] }
 ];
 
-var fnCf = {
+const fnCf = {
 
     c : _ftCfg,
+
+    w : window.innerWidth,
+
+    h : window.innerHeight,
+
+    t : function(v){
+        return /%$/g.test(v);
+    },
+
+    i : function(v){
+        return parseInt(v.replace(/%|px/g, ''));
+    },
+
+    s : function(v, s){
+        return v + (!0 === s ? 0 : 'px');
+    },
+
+    p : function(v, s){
+        return this.s(parseInt(this.t(v) ? this.i(v) * this.w / 100 : this.i(v)), s);
+    },
 
     fbPosX : function(){
         return this.c.FeedbackPositionX === 'left' ? 'left' : 'right';
@@ -99,12 +127,12 @@ var fnCf = {
         return this.c.FeedbackPositionY === 'top' ? 'top' : 'bottom';
     },
 
-    fbWidth : function(){
-        return /^[1-9](%|px|(0(0?%|\dpx)|[1-9](%|\dpx)))$/g.test(this.c.FeedbackBoxWidth) ? this.c.FeedbackBoxWidth : '300px';
+    fbWidth : function(s){
+        return this.p(/^[1-9](%|px|(0(0?%|\dpx)|[1-9](%|\dpx)))$/g.test(this.c.FeedbackBoxWidth) ? this.c.FeedbackBoxWidth : '300px', s);
     },
 
-    fbHeight : function(){
-        return /^[1-9](%|px|(0(0?%|\dpx)|[1-9](%|\dpx)))$/g.test(this.c.FeedbackBoxHeight) ? this.c.FeedbackBoxHeight : '450px';
+    fbHeight : function(s){
+        return this.p(/^[1-9](%|px|(0(0?%|\dpx)|[1-9](%|\dpx)))$/g.test(this.c.FeedbackBoxHeight) ? this.c.FeedbackBoxHeight : '450px', s);
     },
 
     fbLayer : function(){
@@ -112,67 +140,67 @@ var fnCf = {
     },
 
     fbBdrCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackBorderColor) ? this.c.FeedbackBorderColor : '#5ca2e0';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackBorderColor) ? this.c.FeedbackBorderColor : '#5ca2e0';
     },
 
     fbBgCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackBackgroundColor) ? this.c.FeedbackBackgroundColor : '#fff';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackBackgroundColor) ? this.c.FeedbackBackgroundColor : '#fff';
     },
 
     fbHBgCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackHeadBackgroundColor) ? this.c.FeedbackHeadBackgroundColor : '#5ca2e0';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackHeadBackgroundColor) ? this.c.FeedbackHeadBackgroundColor : '#5ca2e0';
     },
 
-    fbHHeight : function(){
-        return /^[1-9]\dpx$/g.test(this.c.FeedbackHeadHeight) ? this.c.FeedbackHeadHeight : '30px';
+    fbHHeight : function(s){
+        return this.p(/^[1-9]\dpx$/g.test(this.c.FeedbackHeadHeight) ? this.c.FeedbackHeadHeight : '30px', s);
     },
 
     fbHTxtCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackHeadTextColor) ? this.c.FeedbackHeadTextColor : '#fff';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackHeadTextColor) ? this.c.FeedbackHeadTextColor : '#fff';
     },
 
-    fbHTxtSz : function(){
-        return /^[12]\dpx$/g.test(this.c.FeedbackHeadTextSize) ? this.c.FeedbackHeadTextSize : '16px';
+    fbHTxtSz : function(s){
+        return this.p(/^[12]\dpx$/g.test(this.c.FeedbackHeadTextSize) ? this.c.FeedbackHeadTextSize : '16px', s);
     },
 
-    fbHIcoSz : function(){
-        return /^(1\d|20)px$/g.test(this.c.FeedbackIconSize) ? this.c.FeedbackIconSize : '16px';
+    fbHIcoSz : function(s){
+        return this.p(/^(1\d|20)px$/g.test(this.c.FeedbackIconSize) ? this.c.FeedbackIconSize : '16px', s);
     },
 
-    fbFmHeight : function(){
-        return /^[1-9](%|px|(0(0?%|\dpx)|[1-9](%|\dpx)))$/g.test(this.c.FeedbackFormHeight) ? this.c.FeedbackFormHeight : '385px';
+    fbFmHeight : function(s){
+        return this.s(this.fbHeight(true) - this.fbHHeight(true) - 2, s);
     },
 
     fbScrollX : function(){
-        return true === this.c.FeedbackShowScroolBarX ? ';overflow-x:auto' : '';
+        return true === this.c.FeedbackShowScrollBarY ? ';overflow-x:auto' : '';
     },
 
     fbScrollY : function(){
-        return true === this.c.FeedbackShowScroolBarY ? ';overflow-y:auto' : '';
+        return true === this.c.FeedbackShowScrollBarY ? ';overflow-y:auto' : '';
     },
 
-    fbDstRw : function(){
-        return /^([12]\d|30)px$/g.test(this.c.FeedbackDistanceRows) ? this.c.FeedbackDistanceRows : '15px';
+    fbDstRw : function(s){
+        return this.p(/^([12]\d|30)px$/g.test(this.c.FeedbackDistanceRows) ? this.c.FeedbackDistanceRows : '15px', s);
     },
 
     fbTbBdrCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackTextboxBorderColor) ? this.c.FeedbackTextboxBorderColor : '#5ca2e0';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackTextboxBorderColor) ? this.c.FeedbackTextboxBorderColor : '#5ca2e0';
     },
 
     fbTbBgCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackTextboxBackgroundColor) ? this.c.FeedbackTextboxBackgroundColor : '#fff';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackTextboxBackgroundColor) ? this.c.FeedbackTextboxBackgroundColor : '#fff';
     },
 
     fbBtnBgCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackButtonBackgroundColor) ? this.c.FeedbackButtonBackgroundColor : '#5ca2e0';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackButtonBackgroundColor) ? this.c.FeedbackButtonBackgroundColor : '#5ca2e0';
     },
 
     fbBtnBdrCor : function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackButtonBackgroundColor) ? this.c.FeedbackButtonBackgroundColor : '#5ca2e0';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackButtonBackgroundColor) ? this.c.FeedbackButtonBackgroundColor : '#5ca2e0';
     },
 
     fbBtnTxtCor: function(){
-        return /^\#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackButtonTextColor) ? this.c.FeedbackButtonTextColor : '#fff';
+        return /^#([\da-f]{3}){1,2}$/gi.test(this.c.FeedbackButtonTextColor) ? this.c.FeedbackButtonTextColor : '#fff';
     },
 
     enStorage : function(){
@@ -195,76 +223,74 @@ var fnCf = {
         return 'top' === this.c.FeedbackMessagePosition ? 'top' : 'bottom';
     },
 
+    fbHeader : function(){
+        return !!this.c.Headers && Object === this.c.Headers.constructor ? this.c.Headers : {};
+    },
 
+    fbShow : function(){
+        return !!this.c.FeedbackDefaultShow && true === this.c.FeedbackDefaultShow;
+    },
+
+    symm : function(v){
+        switch(v){
+            case 'top': return 'bottom';
+            case 'bottom': return 'top';
+            case 'left': return 'right';
+            case 'right': return 'left';
+            default: return null;
+        }
+    }
 
 };
 
-var _ftfbCSS = function(){
+const _ftfbCSS = function(){
 
-    let b = fnCf.fbPosX() + ':0;' + fnCf.fbPosY() + ':0' + ';z-index:' + fnCf.fbLayer();
-    b += ';width:' + fnCf.fbWidth() + ';height:' + fnCf.fbHeight();
-    b += ';border:1px solid ' + fnCf.fbBdrCor() + ';background:' + fnCf.fbBgCor();
-
+    let b = fnCf.fbPosX() + ':0;' + fnCf.fbPosY() + ':0' + ';z-index:' + fnCf.fbLayer() + ';width:' + fnCf.fbWidth() + ';height:' 
+        + fnCf.fbHeight() + ';border:1px solid ' + fnCf.fbBdrCor() + ';background:' + fnCf.fbBgCor();
     let h = ';background:' + fnCf.fbHBgCor() + ';height:' + fnCf.fbHHeight();
-
     let a = ';color:' + fnCf.fbHTxtCor() + ';font-size:' + fnCf.fbHTxtSz();
-
-    let s = fnCf.fbHIcoSz(), i = ';width:' + s + ';height:' + s;
-
-    s = fnCf.fbFmHeight();
-    let o = ';min-height:' + s + ';max-height:' + s + fnCf.fbScrollX() + fnCf.fbScrollY();
-
+    let i = ';width:' + fnCf.fbHIcoSz() + ';height:' + fnCf.fbHIcoSz();
+    let o = ';min-height:' + fnCf.fbFmHeight() + ';max-height:' + fnCf.fbFmHeight() + fnCf.fbScrollX() + fnCf.fbScrollY();
     let p = ';border:1px solid ' + fnCf.fbTbBdrCor() + ';background:' + fnCf.fbTbBgCor();
-
-    s = fnCf.fbBtnBgCor();
-    let t = ';background:' + s + ';border:1px solid ' + s + ';color:' + fnCf.fbBtnTxtCor();
-
-    let m = fnCf.fbMsgPos() + ':0;';
+    let t = ';background:' + fnCf.fbBtnBgCor() + ';border:1px solid ' + fnCf.fbBtnBgCor() + ';color:' + fnCf.fbBtnTxtCor();
+    let m = fnCf.fbMsgPos() + ':0;' + fnCf.fbPosX() + ':-' + fnCf.fbWidth();
 
     return {
-        
         box : "position:fixed;border-top-left-radius:4px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;box-sizing:border-box;transition:all ease 0.3s;" + b,
-        
-        head : "position:relative;cursor:pointer" + h,
-        
-        headH2 : "line-height:30px;padding:0 30px;margin:0;" + a,
-        
+        head : "position:absolute;cursor:pointer;width:100%;transition:all ease 0.3s" + h,
+        headH2 : "line-height:30px;box-sizing:border-box;padding:0 30px;margin:0;" + a,
         headIcons : "position:absolute;top:0;left:5px;height:30px;width:30px;",
-        
         headSpanIcon : "margin-top:4px;border:1px solid #fff;border-radius:50%;display:inline-block;position:relative" + i,
-        
         headIconI : "display:inline-block;width:5px;height:5px;border-right:1px solid #fff;border-bottom:1px solid #fff;top:5px;left:4px;position:absolute;transition:all ease 0.3s",
-        
-        body : "padding:15px" + o,
-        
+        body : "padding:15px;box-sizing:border-box;position:absolute;bottom:0" + o,
         bodyUl : "list-style:none;margin:0;padding:0;",
-        
         bodyLiOdd : "margin-bottom:" + fnCf.fbDstRw(),
-        
         bodyControl : "width:100%;padding:3px 8px;border-radius:4px;outline:0;box-sizing:border-box" + p,
-        
         bodyButton : "font-weight:bold;padding:5px 15px;margin-right:5px;cursor:pointer;border-radius:4px;outline:0" + t,
-        
-        message : "position:absolute;right:-350px;border:2px solid #b25747;background:rgba(178, 87, 71, 0.2);padding:10px;font-size:12px;font-weight:bold;color:#b25747;width:100%;box-sizing:border-box;transition:all ease 0.3s;"
+        message : "position:absolute;border:2px solid #b25747;background:rgba(178, 87, 71, 0.2);padding:10px;font-size:12px;font-weight:bold;color:#b25747;width:100%;box-sizing:border-box;transition:all ease 0.3s;" + m
     };
 }
 
-var d = document;
-var css = _ftfbCSS.apply();
-var _ftLcItem = fnCf.lcItem();
+const d = document;
+const css = _ftfbCSS.apply();
+const _ftLcItem = fnCf.lcItem();
 
 var _ftEl = { headClick : false, buttons : {}, controls : {} };
 
-var _ftAJAXToServer = function(data, cb){
+const _ftAJAXToServer = function(data, cb){
     let xhttp = new XMLHttpRequest();
     xhttp.open('post', fnCf.path(), true);
+
+    let header = fnCf.fbHeader();
+    for(let k in header) xhttp.setRequestHeader(k, header[k]);
+
     xhttp.onload = function(){
         cb(xhttp);
     }
     xhttp.send(data);
 };
 
-var _ftSetMessage = function(msg, type){
+const _ftSetMessage = function(msg, type){
     var elMsg = _ftEl.message;
     elMsg.innerHTML = msg.toString();
 
@@ -289,15 +315,13 @@ var _ftCtrl = {
 
     _clearButton : function(){
         _ftEl.form.reset();
-        if (enableLocalStorage) _ftfbClearLocal();
+        if (fnCf.enStorage()) _ftfbClearLocal();
     },
 
     _formSubmit : function(event){
-        event.preventDefault();console.log('aaa');
-        if ('submit' in _ftEl.buttons){console.log('bbb');
-        console.log(_ftEl.buttons.submit.disabled)
+        event.preventDefault();
+        if ('submit' in _ftEl.buttons){
             _ftEl.buttons.submit.disabled = true;
-            console.log(_ftEl.buttons.submit.disabled)
             let hasData = false, formData = new FormData();
 
             for (let name in _ftEl.controls){
@@ -324,7 +348,7 @@ var _ftCtrl = {
                     _ftAJAXToServer(formData, function(xhttp){
                         if (xhttp.readyState === 4){
                             _ftCfg.AJAXSuccess(xhttp.responseText)
-                            if (fnCf.enStorage()) _ftfbClearLocal();
+                            _ftCtrl._clearButton();
                         }
                         else{
                             _ftCfg.AJAXError(xhttp.responseText);
@@ -345,7 +369,7 @@ var _ftCtrl = {
     
 };
 
-var _ftHandlerEvent = function(DOMElement, eventName, handlerFunction){
+const _ftHandlerEvent = function(DOMElement, eventName, handlerFunction){
     if (!!DOMElement){
         if ('addEventListener' in DOMElement) DOMElement.addEventListener(eventName, handlerFunction);
         else if ('attachEvent' in DOMElement) DOMElement.attachEvent('on' + eventName, handlerFunction);
@@ -353,14 +377,14 @@ var _ftHandlerEvent = function(DOMElement, eventName, handlerFunction){
     }
 };
 
-var _ftDiv = function(id, cls){
+const _ftDiv = function(id, cls){
     let div = d.createElement('div');
     if (!!id && String === id.constructor) div.setAttribute('id', id);
     if (!!cls && String === cls.constructor) div.setAttribute('class', cls);
     return div;
 };
 
-var _ftfbBox = function(){
+const _ftfbBox = function(){
     var ftfbBox = _ftDiv('ftfb2018');
     
     ftfbBox.setAttribute('style', css.box);
@@ -369,32 +393,56 @@ var _ftfbBox = function(){
     return ftfbBox;
 };
 
-var _ftClkIco = function(event){
+const _ftClkIco = function(event){
     let i = _ftEl.i, c = i.classList.contains('mini');
     i.setAttribute('class', c ? 'maxi' : 'mini');
     i.style.left = c ? '6px' : '4px';
     i.style.transform = c ? 'rotate(135deg)' : 'rotate(-45deg)';
 };
 
-var _ftClkHead = function(event){
-    event.preventDefault();
+const _ftClkHead = function(e){
+    if (!!e) e.preventDefault();
+    
+    let posY = fnCf.fbPosY();
+    let posX = fnCf.fbPosX();
+
     let c = _ftEl.headClick;
-    _ftEl.box.style.bottom = c ? 0 : '-420px';
-    _ftEl.box.style.right = c ? 0 : '-170px';
+    let p = ('bottom' !== posY);
+
+    _ftEl.h2.style.width = c ? '100%' : 'auto';
+
+    _ftEl.box.style[posY] = c ? 0 : '-' + fnCf.s(fnCf.fbFmHeight(true) + 1);
+    _ftEl.box.style[posX] = c ? 0 : '-' + fnCf.s(parseInt(_ftEl.h2.clientWidth / 2));
+
+    _ftEl.head.style[posY] = p ? (c ? 0 : null) : 0;
+    _ftEl.head.style[fnCf.symm(posY)] = p ? (c ? null : 0) : null;
+    _ftEl.body.style[posY] = p ? (c ? null : 0) : null;
+    _ftEl.body.style[fnCf.symm(posY)] = p ? (c ? 0 : null) : 0;
+    
+    _ftEl.icons.style[posX] = null;
+    let h = ('right' === posX);
+
+    _ftEl.h2.style.textAlign = h ? posX : fnCf.symm(posX);
+    _ftEl.icons.style[fnCf.symm(posX)] = '5px';
+    _ftEl.icons.style[posX] = null;
+    _ftEl.icons.style.textAlign = h ? posX : fnCf.symm(posX);
+    
     _ftEl.headClick = !c;
     _ftClkIco.apply();
 };
 
-var _ftfbHead = function(){
+const _ftfbHead = function(){
     var ftfbHead = _ftDiv('ftfb-head');
     ftfbHead.setAttribute('style', css.head)
     
     var h2 = d.createElement('h2');
     h2.setAttribute('style', css.headH2);
     h2.innerText = 'Feedback';
+    _ftEl.h2 = h2;
 
     var icons = _ftDiv('ftfb-icons');
     icons.setAttribute('style', css.headIcons);
+    _ftEl.icons = icons;
 
     var icon = d.createElement('span');
     icon.setAttribute('class', 'ftfb-icon');
@@ -419,36 +467,36 @@ var _ftfbHead = function(){
     return ftfbHead;
 };
 
-var _ftList = () => {
+const _ftList = () => {
     let ul = d.createElement('ul');
     ul.setAttribute('style', css.bodyUl);
     return ul;
 };
-var _ftItem = (c, s) => {
+const _ftItem = (c, s) => {
     let li = d.createElement('li');
     if (!!s && String === s.constructor) li.setAttribute('style', s);
     if (!!c) li.appendChild(c);
     return li;
 };
 
-var _ftOption = function(info){
+const _ftOption = function(info){
     let el = d.createElement('option');
     el.setAttribute('value', info.value);
     el.innerText = info.text;
     return el;
 };
 
-function _ftfbAddListener(el, events){
+const _ftfbAddListener = function(el, events){
     for (let name in events) {
         if (events[name] in _ftCtrl) _ftHandlerEvent(el, name, _ftCtrl[events[name]]);
     }
 }
 
-function _ftfbClearLocal(){
+const _ftfbClearLocal = function(){
     localStorage.removeItem(_ftLcItem);
 }
 
-function _ftfbSetLocal(){
+const _ftfbSetLocal = function(){
     let data = {};
     let controls = _ftEl.controls;
 
@@ -462,7 +510,7 @@ function _ftfbSetLocal(){
     localStorage.setItem(_ftLcItem, JSON.stringify(data));
 }
 
-function _ftfbRestoreLocal(){
+const _ftfbRestoreLocal = function(){
     let data = localStorage.getItem(_ftLcItem);
     if (!!data) data = JSON.parse(data);
     
@@ -529,16 +577,16 @@ _ftCtrl.button = function(tag){
     return el;
 }
 
-var _ftLabel = function(name){
+const _ftLabel = function(name){
     let el = d.createElement('label');
     el.innerHTML = name;
     return el;
 };
 
-var _ftRow = function(info, list){
+const _ftRow = function(info, list){
     if (!!info.name){
         let elLabel = _ftLabel(info.name);
-        let elLiLabel = _ftItem(elLabel);
+        let elLiLabel = _ftItem(elLabel, 'margin-bottom:3px;');
         list.appendChild(elLiLabel);
     }
 
@@ -555,7 +603,7 @@ var _ftRow = function(info, list){
     if (elLiControl) list.appendChild(elLiControl);
 };
 
-var _ftForm = function(){
+const _ftForm = function(){
     var form = d.createElement('form');
 
     form.setAttribute('id', "ftfb-form");
@@ -577,7 +625,7 @@ var _ftForm = function(){
     return form;
 };
 
-var _ftfbBody = function(){
+const _ftfbBody = function(){
     var ftfbMain = _ftDiv('ftfb-body');
     ftfbMain.setAttribute('style', css.body);
 
@@ -589,14 +637,14 @@ var _ftfbBody = function(){
     return ftfbMain;
 };
 
-var _ftfbMessage = function(){
+const _ftfbMessage = function(){
     var ftfbMsg = _ftDiv('ftfb-message');
     ftfbMsg.setAttribute('style', css.message);
     _ftEl.message = ftfbMsg;
     return ftfbMsg;
 }
 
-var _ftfbLoaded = function(){
+const _ftfbLoaded = function(){
     // Variable body element;
     var ftfbBody = d.getElementsByTagName('body')[0];
 
@@ -619,6 +667,7 @@ var _ftfbLoaded = function(){
 
     // Append box FTFB inside body element
     ftfbBody.appendChild(ftfbBox);
+    if (!fnCf.fbShow()) _ftClkHead.apply();
 };
 
-_ftHandlerEvent(window, 'DOMContentLoaded', _ftfbLoaded);
+_ftHandlerEvent(window, 'load', _ftfbLoaded);
