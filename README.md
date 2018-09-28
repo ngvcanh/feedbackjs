@@ -33,4 +33,7 @@ class Utility extends Component{
 
 | Name | Type | Description | Default|
 |------|------|-------------|--------|
-| <p align="center">URLServer</p> | *String* | The URL that form will execute ajax to it | |
+| <p align="center">*AJAXSuccess*</p> | **Closure** | Callback function after successful AJAX implementation |  |
+| <p align="center">*MilisecondsShowMessage*</p> | **Integer** | The millisecond wait to close the message since it appears  | <p align="center">*2000*</p> |
+| <p align="center">*URLServer*</p> | **String** | The URL that form will execute ajax to it | |
+
