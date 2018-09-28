@@ -27,3 +27,10 @@ class Utility extends Component{
 
 }
 ```
+## Configuration
+
+**Feedback plugin** support config at constant `_ftCfg`.
+
+| Name | Type | Description | Default|
+|------|------|-------------|--------|
+| <p align="center">URLServer</p> | *String* | The URL that form will execute ajax to it | |
